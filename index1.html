@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>เก็บค่าห้อง</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f3f6f4;--card:#fff;--ink:#1d2b26;--mute:#6b7a73;--line:#dbe4df;--main:#1f6f5c;--ok:#1f6f5c;--warn:#c2410c;--over:#1d4ed8}
+@media(prefers-color-scheme:dark){:root{--bg:#121816;--card:#1b2420;--ink:#e8f0ec;--mute:#93a39b;--line:#2c3933;--main:#4cc2a1;--ok:#4cc2a1;--warn:#fb923c;--over:#7aa2ff}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Sarabun',system-ui,sans-serif;line-height:1.5}
+main{max-width:720px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.9rem;font-weight:800;margin:0 0 4px}
+.sub{color:var(--mute);margin:0 0 20px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+label{display:block;font-size:.85rem;color:var(--mute);margin-bottom:4px}
+input{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 11px;width:100%}
+input:focus,button:focus-visible,summary:focus-visible{outline:2px solid var(--main);outline-offset:1px}
+.f{flex:1;min-width:120px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--line);background:transparent;color:var(--ink);padding:9px 14px}
+button.p{background:var(--main);border-color:var(--main);color:#fff;font-weight:600}
+.mnav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mnav b{font-size:1.2rem}
+.big{font-size:2.2rem;font-weight:800;line-height:1.1}
+.bar{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin:12px 0 6px}
+.bar i{display:block;height:100%;background:var(--main);transition:width .3s}
+.stats{display:flex;gap:24px;flex-wrap:wrap;color:var(--mute);font-size:.92rem}
+.stats b{color:var(--ink)}
+.item{padding:12px 0;border-top:1px solid var(--line)}
+.item:first-child{border-top:0}
+.top{display:flex;align-items:center;gap:12px}
+.nm{flex:1;min-width:0}
+.nm strong{display:block;font-size:1.05rem}
+.nm span{font-size:.88rem;color:var(--mute)}
+.nm strong .rank{font-size:.8rem;font-weight:600;padding:1px 9px;border-radius:99px;border:1px solid currentColor;margin-left:6px;white-space:nowrap}
+.nm .rk{display:block}
+.tag{font-size:.82rem;font-weight:600;padding:2px 10px;border-radius:99px;border:1px solid currentColor;white-space:nowrap}
+.t-ok{color:var(--ok)}.t-warn{color:var(--warn)}.t-over{color:var(--over)}
+.acts{display:flex;gap:6px}
+.acts button{padding:6px 10px;font-size:.88rem}
+details{margin-top:8px}
+summary{cursor:pointer;color:var(--mute);font-size:.88rem}
+.h{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:.92rem;border-bottom:1px dashed var(--line)}
+.h:last-child{border-bottom:0}
+.h .d{flex:1;color:var(--mute)}
+.h button{padding:2px 8px;font-size:.8rem}
+.nohist{color:var(--mute);font-size:.88rem;padding:6px 0}
+.empty{color:var(--mute);text-align:center;padding:20px 0}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:10px;color:var(--mute);font-size:.85rem}
+</style>
+</head>
+<body>
+<main>
+  <h1>เก็บค่าห้อง</h1>
+  <p class="sub">บันทึกการจ่ายแต่ละครั้ง แยกตามเดือน ข้อมูลเก็บในเบราว์เซอร์เครื่องนี้ · เวอร์ชัน sync-6</p>
+
+  <section class="card">
+    <div class="mnav">
+      <button id="prev" aria-label="เดือนก่อนหน้า">◀</button>
+      <b id="mlabel"></b>
+      <button id="next" aria-label="เดือนถัดไป">▶</button>
+    </div>
+    <div class="row" style="margin-top:12px">
+      <div class="f"><label for="rent">ค่าห้องต่อคน (บาท) ของเดือนนี้</label><input id="rent" type="number" min="0" value="3000"></div>
+      <div class="f"><label for="month">ไปที่เดือน</label><input id="month" type="month"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="stats"><span>เก็บได้แล้ว</span></div>
+    <div class="big" id="got">0 บาท</div>
+    <div class="bar"><i id="fill" style="width:0"></i></div>
+    <div class="stats">
+      <span>ยอดที่ต้องเก็บ <b id="need">0</b></span>
+      <span>ค้างอีก <b id="left">0</b></span>
+      <span>ยกมาจากเดือนก่อน <b id="carry">0</b></span>
+      <span>จ่ายครบ <b id="done">0/0</b> คน</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <div class="f" style="flex:2"><label for="name">ชื่อ</label><input id="name" placeholder="เช่น นิว"></div>
+      <div class="f"><label for="amt">จ่ายมาแล้ว (บาท)</label><input id="amt" type="number" min="0" value="0"></div>
+      <button class="p" id="add">เพิ่มคน</button>
+    </div>
+  </section>
+
+  <section class="card" id="list"></section>
+
+  <div class="foot"><span id="status"></span><button id="reset">ล้างยอดเดือนนี้</button></div>
+</main>
+
+<script>
+const KEY = 'rent-tracker-v2';
+const OLD_KEY = 'rent-tracker-v1';
+const $ = id => document.getElementById(id);
+// state: people ใช้ร่วมกันทุกเดือน, pay[เดือน][id] = [{a: จำนวนเงิน, t: เวลา}]
+let state = { rent: 3000, rents: {}, month: '', people: [], pay: {} };
+const open = new Set();
+
+// วางลิงก์ Firebase Realtime Database ตรงนี้ (ไม่ต้องมี / ปิดท้าย) ถ้าเว้นว่างจะเก็บในเครื่องนี้เท่านั้น
+const DB_URL = 'https://money-6f16c-default-rtdb.asia-southeast1.firebasedatabase.app';
+const DB_PATH = '/rent2.json';
+
+/* ================= ตั้งค่าระบบยศ (แก้ตรงนี้ได้เลย) =================
+   RANK_BY: วิธีนับคะแนนของแต่ละคน
+     'months' = จำนวนเดือนที่จ่ายครบ
+     'total'  = ยอดเงินรวมที่เคยจ่ายทุกเดือน
+   RANKS: รายการยศ เรียงจาก min น้อยไปมาก
+     min   = คะแนนขั้นต่ำที่ต้องมีถึงจะได้ยศนี้
+     name  = ชื่อยศ    icon = อีโมจิ    color = สีป้าย
+   อยากเพิ่มยศ ก็เพิ่มบรรทัดใหม่ในรายการได้เลย */
+const RANK_BY = 'total';
+const RANK_UNIT = RANK_BY === 'months' ? 'เดือน' : 'บาท';
+const RANKS = [
+  { min: 0,    name: 'ยาจก',    icon: '🥀', color: '#6b7a73' },
+  { min: 200,  name: 'ขอทาน',   icon: '🪙', color: '#92400e' },
+  { min: 500,  name: 'ชาวบ้าน',  icon: '🏠', color: '#2e8b57' },
+  { min: 1000, name: 'ดัชเชส',   icon: '🎀', color: '#db2777' },
+  { min: 1250, name: 'ดยุก',    icon: '💎', color: '#2563eb' },
+  { min: 1500, name: 'ราชินี',   icon: '👸', color: '#9333ea' },
+  { min: 2000, name: 'ราชา',    icon: '👑', color: '#d97706' },
+];
+// คำนวณคะแนนของแต่ละคน — เปลี่ยนสูตรได้ที่นี่
+function personScore(id){
+  let s = 0;
+  Object.entries(state.pay).forEach(([m, byId]) => {
+    const paid = ((byId||{})[id]||[]).reduce((t,x)=>t+x.a, 0);
+    const rent = state.rents[m] ?? state.rent;
+    if (RANK_BY === 'total') s += paid;
+    else if (rent > 0 && paid >= rent) s += 1;
+  });
+  return s;
+}
+function rankOf(score){
+  let i = 0;
+  RANKS.forEach((r, k) => { if (score >= r.min) i = k; });
+  return { cur: RANKS[i], next: RANKS[i+1] || null };
+}
+/* ================================================================ */
+
+/* ================= ตั้งค่าพื้นหลัง (แก้ตรงนี้ได้เลย) =================
+   light / dark: พื้นหลังตอนโหมดสว่าง / โหมดมืด (ตามเครื่องของแต่ละคน)
+     ใส่ได้ทุกแบบที่ CSS รองรับ เช่น
+       '#f3f6f4'                                  สีล้วน
+       'linear-gradient(135deg,#ffd6e7,#c9e4ff)'  สีไล่เฉด
+   image: ลิงก์รูปพื้นหลัง (เว้น '' = ไม่ใช้รูป) เช่น 'https://.../bg.jpg' หรือ 'bg.jpg'
+          ถ้าใส่รูป จะแสดงรูปทับสีด้านบน ขยายเต็มจอและไม่เลื่อนตาม
+   สีของการ์ด/ตัวหนังสือแก้ได้ที่ตัวแปร --card --ink ใน :root ด้านบน */
+const BACKGROUND = {
+  light: '#f3f6f4',
+  dark:  '#121816',
+  image: '833172029_1087972224142531_5479026980495393506_n.jpg',
+};
+function applyBackground(){
+  const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  const color = dark ? BACKGROUND.dark : BACKGROUND.light;
+  document.body.style.background = BACKGROUND.image
+    ? 'url("' + BACKGROUND.image + '") center / cover fixed no-repeat, ' + color
+    : color;
+}
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', applyBackground);
+/* ================================================================ */
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const nowMonth = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); };
+const fmt = n => Number(n).toLocaleString('th-TH');
+
+function normalize(s){
+  s = s || {};
+  const out = { rent: Number(s.rent)||0, rents: s.rents||{}, month: s.month||'', people: [], pay: {} };
+  const ppl = Array.isArray(s.people) ? s.people.filter(Boolean) : Object.values(s.people||{});
+  const m = out.month || nowMonth();
+  ppl.forEach(p => {
+    const id = p.id || uid();
+    out.people.push({ id, name: p.name });
+    // ข้อมูลเก่า (v1) มี paid เป็นยอดรวม → แปลงเป็นการจ่าย 1 ครั้งในเดือนปัจจุบัน
+    if (p.paid > 0 && !p.id){
+      out.pay[m] = out.pay[m] || {};
+      out.pay[m][id] = [{ a: Number(p.paid), t: Date.now() }];
+    }
+  });
+  Object.entries(s.pay||{}).forEach(([mo, byId]) => {
+    out.pay[mo] = out.pay[mo] || {};
+    Object.entries(byId||{}).forEach(([id, arr]) => {
+      out.pay[mo][id] = (Array.isArray(arr) ? arr : Object.values(arr||{})).filter(Boolean);
+    });
+  });
+  return out;
+}
+function load(){
+  try {
+    const s = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+    if (s) state = normalize(JSON.parse(s));
+  } catch(e){}
+  if (!state.month) state.month = nowMonth();
+}
+let dirty = 0; // จำนวนการบันทึกออนไลน์ที่ยังค้างอยู่ ระหว่างนั้นจะไม่ดึงข้อมูลมาทับ
+function errMsg(e){
+  if (e === 401 || e === 403) return 'Firebase ไม่อนุญาต (' + e + ') ไปตั้ง Rules ให้ read/write เป็น true';
+  if (e === 404) return 'ไม่พบฐานข้อมูล ตรวจลิงก์ DB_URL';
+  return 'ออนไลน์ไม่ได้ (' + ((e && e.message) || e) + ')';
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+  if (!DB_URL) return;
+  dirty++;
+  fetch(DB_URL + DB_PATH, { method:'PUT', body: JSON.stringify(state) })
+    .then(r => { if (!r.ok) throw r.status; setStatus('บันทึกออนไลน์แล้ว'); })
+    .catch(e => setStatus(errMsg(e)))
+    .finally(() => { dirty--; });
+}
+function setStatus(t){ $('status').textContent = t; }
+// stringify แบบเรียงคีย์ เพื่อเทียบข้อมูลโดยไม่สนลำดับ (Firebase เรียงคีย์ใหม่ให้)
+const sj = o => JSON.stringify(o, (k, v) => v && typeof v === 'object' && !Array.isArray(v)
+  ? Object.fromEntries(Object.entries(v).sort(([x],[y]) => x < y ? -1 : 1)) : v);
+async function pull(){
+  if (!DB_URL || dirty) return;
+  try {
+    const r = await fetch(DB_URL + DB_PATH);
+    if (!r.ok) throw r.status;
+    const d = await r.json();
+    if (dirty) return;
+    if (d && !d.error){
+      const n = normalize(d); n.month = state.month; // ไม่เปลี่ยนเดือนที่กำลังดูอยู่
+      if (sj(n) !== sj(normalize(state))){
+        state = n;
+        try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(e){}
+        render();
+      }
+    } else if (!d && state.people.length){ save(); return; } // ฐานข้อมูลว่าง → ส่งข้อมูลในเครื่องขึ้นไป
+    setStatus('เชื่อมต่อออนไลน์อยู่ ทุกคนเห็นข้อมูลเดียวกัน');
+  } catch(e){ setStatus(errMsg(e)); }
+}
+
+const curRent = () => state.rents[state.month] ?? state.rent;
+const pays = id => ((state.pay[state.month]||{})[id]) || [];
+const paidOf = id => pays(id).reduce((s,x)=>s+x.a, 0);
+// ---- เงินเกินยกไปเดือนถัดไป ----
+const rentOf = m => state.rents[m] ?? state.rent;
+const paidIn = (m, id) => (((state.pay[m]||{})[id]) || []).reduce((s,x)=>s+x.a, 0);
+function nextM(m){ const [y,mo] = m.split('-').map(Number); const d = new Date(y, mo, 1); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'); }
+// เครดิตที่ยกมาเข้าเดือน month = เงินเกินสะสมจากเดือนก่อน ๆ (หักค่าห้องแต่ละเดือนแล้ว) ส่วนที่ค้างไม่ยกไปทบ
+function creditIn(id, month){
+  const ms = Object.keys(state.pay).filter(m => paidIn(m, id) > 0).sort();
+  if (!ms.length || ms[0] >= month) return 0;
+  let c = 0, m = ms[0], n = 0;
+  while (m < month && n++ < 600){ c = Math.max(0, c + paidIn(m, id) - rentOf(m)); m = nextM(m); }
+  return c;
+}
+const totalOf = id => paidOf(id) + creditIn(id, state.month);
+function addPay(id, a){
+  const m = state.month;
+  state.rents[m] = state.rents[m] ?? state.rent; // ล็อกค่าห้องของเดือนนี้ไว้ ไม่ให้เปลี่ยนตามเดือนอื่น
+  state.pay[m] = state.pay[m] || {};
+  (state.pay[m][id] = state.pay[m][id] || []).push({ a, t: Date.now() });
+}
+const fdate = t => new Date(t).toLocaleString('th-TH', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' });
+
+function gotoMonth(m){
+  if (!/^\d{4}-\d{2}$/.test(m)) return;
+  state.month = m; save(); render();
+}
+function shift(d){
+  const [y, mo] = state.month.split('-').map(Number);
+  const dt = new Date(y, mo-1+d, 1);
+  gotoMonth(dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0'));
+}
+
+function render(){
+  const [y, mo] = state.month.split('-').map(Number);
+  $('mlabel').textContent = new Date(y, mo-1, 1).toLocaleDateString('th-TH', { month:'long', year:'numeric' });
+  $('month').value = state.month;
+  if (document.activeElement !== $('rent')) $('rent').value = curRent();
+
+  const rent = curRent(), ppl = state.people;
+  const got = ppl.reduce((s,p)=>s+totalOf(p.id),0);
+  $('carry').textContent = fmt(ppl.reduce((s,p)=>s+creditIn(p.id,state.month),0));
+  const need = rent * ppl.length;
+  const done = ppl.filter(p=>totalOf(p.id)>=rent).length;
+  $('got').textContent = fmt(got) + ' บาท';
+  $('need').textContent = fmt(need);
+  $('left').textContent = fmt(Math.max(need-got,0));
+  $('done').textContent = done + '/' + ppl.length;
+  $('fill').style.width = need ? Math.min(got/need*100,100)+'%' : '0';
+
+  const list = $('list');
+  if (!ppl.length){ list.innerHTML = '<div class="empty">ยังไม่มีรายชื่อ เพิ่มคนแรกด้านบนได้เลย</div>'; return; }
+  list.innerHTML = '';
+  ppl.forEach(p => {
+    const paid = paidOf(p.id), cr = creditIn(p.id, state.month), diff = rent - paid - cr, hist = pays(p.id);
+    let cls='t-warn', txt='ค้าง '+fmt(diff)+' บาท';
+    if (diff===0){cls='t-ok';txt='จ่ายครบ';}
+    else if (diff<0){cls='t-over';txt='เกิน '+fmt(-diff)+' บาท (ยกไปเดือนหน้า)';}
+    const el = document.createElement('div');
+    el.className = 'item';
+    el.innerHTML = '<div class="top"><div class="nm"><strong></strong><span>จ่ายแล้ว '+fmt(paid)+(cr ? ' + ยกมา '+fmt(cr) : '')+' จาก '+fmt(rent)+' บาท</span></div>'
+      + '<span class="tag '+cls+'">'+txt+'</span>'
+      + '<div class="acts"><button data-a="pay" data-id="'+p.id+'">จ่ายเพิ่ม</button><button data-a="del" data-id="'+p.id+'" aria-label="ลบคน">ลบ</button></div></div>'
+      + '<details'+(open.has(p.id)?' open':'')+' data-id="'+p.id+'"><summary>ประวัติการจ่าย ('+hist.length+' ครั้ง)</summary><div class="hl"></div></details>';
+    const sc = personScore(p.id), rk = rankOf(sc);
+    const st = el.querySelector('strong');
+    st.textContent = p.name;
+    const badge = document.createElement('span');
+    badge.className = 'rank';
+    badge.textContent = rk.cur.icon + ' ' + rk.cur.name;
+    badge.style.color = rk.cur.color;
+    st.appendChild(badge);
+    const info = document.createElement('span');
+    info.className = 'rk';
+    info.textContent = 'คะแนน ' + fmt(sc) + ' ' + RANK_UNIT + (rk.next ? ' · อีก ' + fmt(rk.next.min - sc) + ' ' + RANK_UNIT + ' ถึงยศ ' + rk.next.name : ' · ยศสูงสุดแล้ว');
+    el.querySelector('.nm').appendChild(info);
+    const hl = el.querySelector('.hl');
+    if (!hist.length) hl.innerHTML = '<div class="nohist">ยังไม่มีรายการจ่ายในเดือนนี้</div>';
+    hist.forEach((x, k) => {
+      const r = document.createElement('div');
+      r.className = 'h';
+      r.innerHTML = '<span class="d"></span><b></b><button data-a="rm" data-id="'+p.id+'" data-k="'+k+'" aria-label="ลบรายการนี้">ลบ</button>';
+      r.querySelector('.d').textContent = fdate(x.t);
+      r.querySelector('b').textContent = '+' + fmt(x.a) + ' บาท';
+      hl.appendChild(r);
+    });
+    list.appendChild(el);
+  });
+}
+
+$('add').onclick = () => {
+  const name = $('name').value.trim();
+  if (!name){ $('name').focus(); return; }
+  const id = uid();
+  state.people.push({ id, name });
+  const a = Math.max(0, Number($('amt').value)||0);
+  if (a > 0) addPay(id, a);
+  $('name').value=''; $('amt').value=0; $('name').focus();
+  save(); render();
+};
+$('name').addEventListener('keydown', e => { if (e.key==='Enter') $('add').click(); });
+$('rent').oninput = e => {
+  const v = Math.max(0, Number(e.target.value)||0);
+  state.rents[state.month] = v; state.rent = v; // เดือนใหม่ ๆ จะใช้ค่าล่าสุดเป็นค่าเริ่มต้น
+  save(); render();
+};
+$('month').onchange = e => gotoMonth(e.target.value);
+$('prev').onclick = () => shift(-1);
+$('next').onclick = () => shift(1);
+$('list').addEventListener('toggle', e => {
+  const id = e.target.dataset && e.target.dataset.id;
+  if (id) e.target.open ? open.add(id) : open.delete(id);
+}, true);
+$('list').onclick = e => {
+  const b = e.target.closest('button'); if (!b) return;
+  const id = b.dataset.id, p = state.people.find(x=>x.id===id);
+  if (!p) return;
+  if (b.dataset.a==='del'){
+    if (confirm('ลบ "'+p.name+'" ออกจากรายชื่อ (ลบประวัติทุกเดือนของคนนี้ด้วย)?')){
+      state.people = state.people.filter(x=>x.id!==id);
+      Object.values(state.pay).forEach(m => delete m[id]);
+      save(); render();
+    }
+  } else if (b.dataset.a==='rm'){
+    const k = Number(b.dataset.k), x = pays(id)[k];
+    if (x && confirm('ลบรายการจ่าย '+fmt(x.a)+' บาท ของ '+p.name+'?')){
+      state.pay[state.month][id].splice(k,1); save(); render();
+    }
+  } else {
+    const left = curRent() - totalOf(id);
+    const v = prompt('ยอดที่จ่ายเพิ่มของ '+p.name+' (บาท)', left > 0 ? left : 0);
+    const n = Number(v);
+    if (v!==null && n>0){ addPay(id, n); open.add(id); save(); render(); }
+  }
+};
+$('reset').onclick = () => {
+  if (confirm('ล้างยอดการจ่ายของเดือนนี้ทั้งหมด? (รายชื่อและเดือนอื่นไม่หาย)')){
+    delete state.pay[state.month]; save(); render();
+  }
+};
+
+load();
+applyBackground();
+render();
+if (DB_URL){ pull(); setInterval(pull, 4000); document.addEventListener('visibilitychange', () => { if (!document.hidden) pull(); }); }
+else setStatus('ยังไม่ได้ตั้งค่าออนไลน์ ข้อมูลเก็บในเครื่องนี้เท่านั้น');
+</script>
+</body>
+</html>
